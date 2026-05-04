@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Manager — Gestión Inteligente</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3a;
+    --accent: #ffe234;
+    --accent2: #ff6b35;
+    --text: #f0f0f8;
+    --muted: #6b6b8a;
+    --success: #34d399;
+    --error: #f87171;
+    --ml-yellow: #ffe234;
+    --ml-blue: #3483fa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 50%, rgba(255,226,52,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(52,131,250,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 100px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .status-dot.connected { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Nav tabs */
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 20px 40px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Main content */
+  .main { padding: 40px; max-width: 1200px; margin: 0 auto; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* Form elements */
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255,226,52,0.08);
+  }
+
+  input[type="password"] { letter-spacing: 2px; }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  select option { background: var(--surface2); }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0a0f;
+  }
+
+  .btn-primary:hover {
+    background: #ffd800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(255,226,52,0.3);
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger { background: var(--error); color: white; }
+  .btn-success { background: var(--success); color: #0a0a0f; }
+
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Stats */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Product cards for competition */
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .product-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .product-img {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    background: #fff;
+    padding: 12px;
+  }
+
+  .product-info { padding: 16px; }
+
+  .product-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .product-price {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+  }
+
+  .product-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-gold { background: rgba(255,226,52,0.15); color: var(--accent); }
+  .badge-green { background: rgba(52,211,153,0.15); color: var(--success); }
+  .badge-blue { background: rgba(52,131,250,0.15); color: var(--ml-blue); }
+
+  /* AI Output */
+  .ai-output {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    margin-top: 16px;
+  }
+
+  /* Alert */
+  .alert {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .alert-info { background: rgba(52,131,250,0.1); border: 1px solid rgba(52,131,250,0.3); color: #93c5fd; }
+  .alert-success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
+  .alert-warning { background: rgba(255,226,52,0.1); border: 1px solid rgba(255,226,52,0.3); color: var(--accent); }
+  .alert-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); }
+
+  /* Loading */
+  .loading {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 12px;
+  }
+
+  .loading.active { display: flex; }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  .section-title em { color: var(--accent); font-style: italic; }
+
+  /* Price comparison bar */
+  .price-bar-container { margin-top: 16px; }
+  .price-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .price-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .price-bar-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); border-radius: 3px; transition: width 0.5s ease; }
+
+  /* My listings */
+  .listing-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--surface2);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+
+  .listing-row:hover { border-color: var(--accent); }
+
+  .listing-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: white;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  .listing-info { flex: 1; min-width: 0; }
+  .listing-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .listing-sub { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 4px; }
+
+  .listing-price { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--accent); flex-shrink: 0; }
+
+  /* Steps indicator */
+  .steps { display: flex; gap: 0; margin-bottom: 32px; }
+  .step {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    text-align: center;
+    position: relative;
+  }
+  .step:first-child { border-radius: 10px 0 0 10px; }
+  .step:last-child { border-radius: 0 10px 10px 0; }
+  .step.active { background: rgba(255,226,52,0.1); border-color: var(--accent); color: var(--accent); }
+  .step.done { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.3); color: var(--success); }
+
+  /* Image upload area */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upload-area:hover { border-color: var(--accent); background: rgba(255,226,52,0.03); }
+  .upload-area.dragover { border-color: var(--accent); background: rgba(255,226,52,0.05); }
+
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-text { font-size: 14px; color: var(--muted); }
+  .upload-text strong { color: var(--accent); }
+
+  .image-previews { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .image-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+  }
+  .image-preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .remove-img {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    background: var(--error);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Token input highlight */
+  .token-display {
+    background: var(--surface2);
+    border: 1px solid var(--success);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--success);
+    word-break: break-all;
+    margin-top: 10px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header { padding: 16px 20px; }
+    .nav-tabs { padding: 16px 20px 0; overflow-x: auto; }
+    .main { padding: 20px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* Search bar */
+  .search-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .search-bar input { flex: 1; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🛒</div>
+      <div class="logo-text">ML <span>Manager</span></div>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Sin conectar</span>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('config')">⚙️ Configuración</button>
+    <button class="tab-btn" onclick="showTab('competition')" id="tabCompetition">📊 Competencia</button>
+    <button class="tab-btn" onclick="showTab('listings')" id="tabListings">📦 Mis publicaciones</button>
+    <button class="tab-btn" onclick="showTab('publish')" id="tabPublish">✨ Nueva publicación</button>
+  </div>
+
+  <div class="main">
+
+    <!-- TAB: CONFIGURACIÓN -->
+    <div class="tab-content active" id="tab-config">
+      <div class="section-header">
+        <h1 class="section-title">Conectá tu cuenta <em>ML</em></h1>
+      </div>
+
+      <div class="alert alert-info">
+        ℹ️ Tus credenciales se usan solo en tu navegador. No se guardan ni se envían a ningún servidor externo.
+      </div>
+
+      <div class="card">
+        <div class="card-title">Paso 1 — Credenciales de tu App</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>App ID (Client ID)</label>
+            <input type="text" id="appId" placeholder="5766721342030782" value="5766721342030782">
+          </div>
+          <div class="form-group">
+            <label>Secret Key</label>
+            <input type="password" id="secretKey" placeholder="Tu nuevo secret key">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Paso 2 — Pegá tu Access Token</div>
+        <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">
+          Pegá el <strong style="color: var(--accent)">access_token</strong> que obtuviste por PowerShell. Empieza con <code style="color: var(--accent); font-family: 'DM Mono', monospace;">APP_USR-...</code>
+        </p>
+
+        <div class="form-group">
+          <label>Access Token</label>
+          <input type="text" id="accessTokenInput" placeholder="APP_USR-5766721342030782-...">
+        </div>
+        <div class="form-group">
+          <label>User ID</label>
+          <input type="text" id="userIdInput" placeholder="392685572" value="392685572">
+        </div>
+
+        <button class="btn btn-primary" onclick="saveToken()">✅ Conectar cuenta</button>
+        <div id="tokenResult"></div>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+          <div class="card-title" style="margin-bottom: 12px;">¿Token vencido? Renovalo</div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">Los tokens duran 6 horas. Para renovar: abrí la URL de autorización, copiá el nuevo código y ejecutá el comando en PowerShell.</p>
+          <button class="btn btn-secondary" onclick="openAuthUrl()">🔐 Abrir autorización ML</button>
+          <div class="token-display" style="margin-top: 12px; font-size: 11px; color: var(--muted);">
+            Invoke-RestMethod -Uri "https://api.mercadolibre.com/oauth/token" -Method POST -ContentType "application/x-www-form-urlencoded" -Body "grant_type=authorization_code&client_id=5766721342030782&client_secret=TU_SECRET&code=NUEVO_CODIGO&redirect_uri=https://httpbin.org/get"
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="cardUserInfo" style="display:none">
+        <div class="card-title">✅ Cuenta conectada</div>
+        <div class="grid-3" id="statsGrid"></div>
+      </div>
+    </div>
+
+    <!-- TAB: COMPETENCIA -->
+    <div class="tab-content" id="tab-competition">
+      <div class="section-header">
+        <h1 class="section-title">Análisis de <em>Competencia</em></h1>
+      </div>
+
+      <div class="card">
+        <div class="search-bar">
+          <input type="text" id="searchQuery" placeholder="Ej: silla de ruedas plegable, cama ortopédica, nebulizador..." onkeydown="if(event.key==='Enter') searchCompetition()">
+          <button class="btn btn-primary" onclick="searchCompetition()">🔍 Analizar</button>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-secondary" style="font-size:12px; padding: 6px 12px;" onclick="quickSearch('silla de ruedas')">Sillas de ruedas</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding: 6px 12px;" onclick="quickSearch('cama ortopedica')">Camas ortopédicas</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding: 6px 12px;" onclick="quickSearch('nebulizador')">Nebulizadores</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding: 6px 12px;" onclick="quickSearch('andador')">Andadores</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding: 6px 12px;" onclick="quickSearch('muletas')">Muletas</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loadingSearch">
+        <div class="spinner"></div> Buscando en Mercado Libre...
+      </div>
+
+      <div id="statsCompetition" style="display:none;" class="grid-3" style="margin-bottom: 20px;"></div>
+
+      <div id="aiAnalysis" style="display:none;" class="card">
+        <div class="card-title">🤖 Análisis IA</div>
+        <div id="aiAnalysisText" class="ai-output"></div>
+      </div>
+
+      <div id="resultsContainer"></div>
+    </div>
+
+    <!-- TAB: MIS PUBLICACIONES -->
+    <div class="tab-content" id="tab-listings">
+      <div class="section-header">
+        <h1 class="section-title">Mis <em>Publicaciones</em></h1>
+        <button class="btn btn-secondary" onclick="loadMyListings()">🔄 Actualizar</button>
+      </div>
+
+      <div class="loading" id="loadingListings">
+        <div class="spinner"></div> Cargando publicaciones...
+      </div>
+
+      <div id="listingsContainer">
+        <div class="empty-state">
+          <div class="icon">📦</div>
+          <p>Conectá tu cuenta en la pestaña Configuración para ver tus publicaciones</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: NUEVA PUBLICACIÓN -->
+    <div class="tab-content" id="tab-publish">
+      <div class="section-header">
+        <h1 class="section-title">Nueva <em>Publicación</em></h1>
+      </div>
+
+      <div class="steps">
+        <div class="step active" id="step1">1. Producto</div>
+        <div class="step" id="step2">2. Generar con IA</div>
+        <div class="step" id="step3">3. Fotos</div>
+        <div class="step" id="step4">4. Publicar</div>
+      </div>
+
+      <!-- Paso 1: datos del producto -->
+      <div id="publishStep1">
+        <div class="card">
+          <div class="card-title">Datos básicos del producto</div>
+          <div class="form-group">
+            <label>Nombre / descripción breve del producto</label>
+            <input type="text" id="pubProductName" placeholder="Ej: Silla de ruedas plegable con apoyabrazos desmontables">
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Categoría</label>
+              <select id="pubCategory">
+                <option value="MLA5726">Sillas de ruedas</option>
+                <option value="MLA10245">Andadores y bastones</option>
+                <option value="MLA9304">Camas hospitalarias</option>
+                <option value="MLA3530">Equipos médicos</option>
+                <option value="MLA81655">Ortopedia y rehabilitación</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Condición</label>
+              <select id="pubCondition">
+                <option value="new">Nuevo</option>
+                <option value="used">Usado</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Precio de costo (referencia)</label>
+              <input type="number" id="pubCostPrice" placeholder="15000">
+            </div>
+            <div class="form-group">
+              <label>Precio de venta deseado</label>
+              <input type="number" id="pubSalePrice" placeholder="25000">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Stock disponible</label>
+            <input type="number" id="pubStock" placeholder="5" value="1">
+          </div>
+          <div class="form-group">
+            <label>Información adicional (características especiales, marca, modelo)</label>
+            <textarea id="pubExtraInfo" placeholder="Ej: Marca Ortopedia Pro, modelo X200, peso máximo 120kg, incluye reposapiés..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="goToStep2()">Generar con IA →</button>
+        </div>
+      </div>
+
+      <!-- Paso 2: IA genera contenido -->
+      <div id="publishStep2" style="display:none;">
+        <div class="card">
+          <div class="card-title">🤖 Contenido generado por IA</div>
+          <div class="loading active" id="loadingAI">
+            <div class="spinner"></div> La IA está generando tu publicación optimizada para ML...
+          </div>
+          <div id="aiGeneratedContent" style="display:none;">
+            <div class="form-group">
+              <label>Título optimizado (máx. 60 caracteres)</label>
+              <input type="text" id="genTitle" maxlength="60">
+              <div style="font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace;" id="charCount">0/60 caracteres</div>
+            </div>
+            <div class="form-group">
+              <label>Descripción completa</label>
+              <textarea id="genDescription" style="min-height: 200px;"></textarea>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Precio sugerido por IA</label>
+                <input type="number" id="genPrice">
+              </div>
+              <div class="form-group">
+                <label>Precio final (editá si querés)</label>
+                <input type="number" id="finalPrice">
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+              <button class="btn btn-secondary" onclick="goToStep1()">← Volver</button>
+              <button class="btn btn-secondary" onclick="regenerateAI()">🔄 Regenerar</button>
+              <button class="btn btn-primary" onclick="goToStep3()">Agregar fotos →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 3: Fotos -->
+      <div id="publishStep3" style="display:none;">
+        <div class="card">
+          <div class="card-title">Fotos del producto</div>
+          <div class="alert alert-info" style="font-size: 13px;">
+            📸 ML recomienda mínimo 3 fotos. Fondo blanco para la foto principal. Máximo 10 fotos.
+          </div>
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+            <div class="upload-icon">📷</div>
+            <div class="upload-text">
+              <strong>Hacé clic o arrastrá las fotos acá</strong><br>
+              JPG, PNG — Mínimo 500x500px
+            </div>
+          </div>
+          <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+          <div class="image-previews" id="imagePreviews"></div>
+          <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="goToStep2()">← Volver</button>
+            <button class="btn btn-primary" onclick="goToStep4()">Revisar y publicar →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 4: Revisión y publicación -->
+      <div id="publishStep4" style="display:none;">
+        <div class="card">
+          <div class="card-title">Revisión final</div>
+          <div id="reviewContent"></div>
+          <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="goToStep3()">← Volver</button>
+            <button class="btn btn-success" onclick="publishItem()" id="publishBtn">🚀 Publicar en Mercado Libre</button>
+          </div>
+          <div class="loading" id="loadingPublish">
+            <div class="spinner"></div> Publicando...
+          </div>
+          <div id="publishResult"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // State
+  let state = {
+    accessToken: localStorage.getItem('ml_access_token') || '',
+    userId: localStorage.getItem('ml_user_id') || '',
+    uploadedImages: [],
+    currentStep: 1,
+    generatedData: {}
+  };
+
+  const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
+  const ML_API = 'https://api.mercadolibre.com';
+
+  // Init
+  window.onload = () => {
+    if (state.accessToken) {
+      updateStatus(true, 'Conectado');
+      loadUserInfo();
+    }
+
+    document.getElementById('genTitle')?.addEventListener('input', function() {
+      document.getElementById('charCount').textContent = `${this.value.length}/60 caracteres`;
+    });
+  };
+
+  // ===== UTILS =====
+  function updateStatus(connected, text) {
+    const dot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    dot.className = 'status-dot' + (connected ? ' connected' : '');
+    statusText.textContent = text;
+  }
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function showAlert(containerId, type, message) {
+    document.getElementById(containerId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+  }
+
+  // ===== CONFIG =====
+  function openAuthUrl() {
+    const appId = document.getElementById('appId').value.trim();
+    if (!appId) { alert('Ingresá el App ID primero'); return; }
+    const url = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${appId}&redirect_uri=https://httpbin.org/get`;
+    window.open(url, '_blank');
+  }
+
+  async function saveToken() {
+    const token = document.getElementById('accessTokenInput').value.trim();
+    const userId = document.getElementById('userIdInput').value.trim();
+
+    if (!token || !userId) {
+      document.getElementById('tokenResult').innerHTML = '<div class="alert alert-error" style="margin-top:12px;">❌ Pegá el access token y el user ID</div>';
+      return;
+    }
+
+    state.accessToken = token;
+    state.userId = userId;
+    localStorage.setItem('ml_access_token', token);
+    localStorage.setItem('ml_user_id', userId);
+
+    // Verificar que el token funciona
+    try {
+      const resp = await fetch(`${ML_API}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const user = await resp.json();
+
+      if (user.id) {
+        updateStatus(true, user.nickname || user.first_name);
+        document.getElementById('tokenResult').innerHTML = `
+          <div class="alert alert-success" style="margin-top:12px;">✅ Conectado como <strong>${user.nickname}</strong> — Token válido por 6hs</div>`;
+        loadUserInfo();
+      } else {
+        document.getElementById('tokenResult').innerHTML = `<div class="alert alert-error" style="margin-top:12px;">❌ Token inválido: ${user.message || 'verificá que esté bien copiado'}</div>`;
+      }
+    } catch(e) {
+      document.getElementById('tokenResult').innerHTML = `<div class="alert alert-error" style="margin-top:12px;">❌ ${e.message}</div>`;
+    }
+  }
+
+  async function loadUserInfo() {
+    if (!state.accessToken) return;
+    try {
+      const [userResp, listingsResp] = await Promise.all([
+        fetch(`${ML_API}/users/me`, { headers: { Authorization: `Bearer ${state.accessToken}` } }),
+        fetch(`${ML_API}/users/${state.userId}/items/search?limit=1`, { headers: { Authorization: `Bearer ${state.accessToken}` } })
+      ]);
+      const user = await userResp.json();
+      const listingsData = await listingsResp.json();
+
+      if (user.id) {
+        document.getElementById('cardUserInfo').style.display = 'block';
+        document.getElementById('statsGrid').innerHTML = `
+          <div class="stat-card"><div class="stat-value">${user.seller_reputation?.transactions?.completed || 0}</div><div class="stat-label">Ventas totales</div></div>
+          <div class="stat-card"><div class="stat-value">${listingsData.paging?.total || 0}</div><div class="stat-label">Publicaciones</div></div>
+          <div class="stat-card"><div class="stat-value">${user.points || 0}</div><div class="stat-label">Puntos ML</div></div>
+        `;
+        updateStatus(true, `${user.nickname || user.first_name}`);
+      }
+    } catch (e) {
+      console.error('Error loading user info:', e);
+    }
+  }
+
+  // ===== COMPETITION =====
+  function quickSearch(q) {
+    document.getElementById('searchQuery').value = q;
+    searchCompetition();
+  }
+
+  async function searchCompetition() {
+    const query = document.getElementById('searchQuery').value.trim();
+    if (!query) return;
+
+    document.getElementById('loadingSearch').classList.add('active');
+    document.getElementById('resultsContainer').innerHTML = '';
+    document.getElementById('statsCompetition').style.display = 'none';
+    document.getElementById('aiAnalysis').style.display = 'none';
+
+    try {
+      const resp = await fetch(`${ML_API}/sites/MLA/search?q=${encodeURIComponent(query)}&limit=12`);
+      const data = await resp.json();
+
+      if (!data.results || data.results.length === 0) {
+        document.getElementById('resultsContainer').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No se encontraron resultados</p></div>';
+        return;
+      }
+
+      // Stats
+      const prices = data.results.map(r => r.price).filter(Boolean);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+
+      document.getElementById('statsCompetition').style.display = 'grid';
+      document.getElementById('statsCompetition').innerHTML = `
+        <div class="stat-card"><div class="stat-value">$${minPrice.toLocaleString('es-AR')}</div><div class="stat-label">Precio mínimo</div></div>
+        <div class="stat-card"><div class="stat-value">$${avgPrice.toLocaleString('es-AR')}</div><div class="stat-label">Precio promedio</div></div>
+        <div class="stat-card"><div class="stat-value">$${maxPrice.toLocaleString('es-AR')}</div><div class="stat-label">Precio máximo</div></div>
+      `;
+
+      // Grid de productos
+      const grid = document.createElement('div');
+      grid.className = 'product-grid';
+
+      data.results.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.onclick = () => window.open(item.permalink, '_blank');
+
+        const sold = item.sold_quantity || 0;
+        const freeship = item.shipping?.free_shipping;
+
+        card.innerHTML = `
+          <img class="product-img" src="${item.thumbnail?.replace('I.jpg', 'O.jpg') || item.thumbnail}" alt="${item.title}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23eee%22 width=%22100%22 height=%22100%22/><text y=%2250%22 x=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22 font-size=%2240%22>📦</text></svg>'">
+          <div class="product-info">
+            <div class="product-title">${item.title}</div>
+            <div class="product-price">$${item.price?.toLocaleString('es-AR')}</div>
+            <div class="product-meta">
+              <span>${sold > 0 ? `✅ ${sold} vendidos` : '—'}</span>
+              <span>${freeship ? '<span class="badge badge-green">Envío gratis</span>' : ''}</span>
+            </div>
+            ${item.condition === 'new' ? '<div style="margin-top: 8px;"><span class="badge badge-blue">Nuevo</span></div>' : ''}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      document.getElementById('resultsContainer').appendChild(grid);
+
+      // AI Analysis
+      analyzeCompetitionWithAI(query, data.results.slice(0, 6), avgPrice, minPrice, maxPrice);
+
+    } catch (e) {
+      document.getElementById('resultsContainer').innerHTML = `<div class="alert alert-error">❌ Error al buscar: ${e.message}</div>`;
+    } finally {
+      document.getElementById('loadingSearch').classList.remove('active');
+    }
+  }
+
+  async function analyzeCompetitionWithAI(query, results, avg, min, max) {
+    document.getElementById('aiAnalysis').style.display = 'block';
+    document.getElementById('aiAnalysisText').textContent = '🤖 Analizando competencia...';
+
+    const summary = results.map(r => `- "${r.title}" → $${r.price?.toLocaleString('es-AR')} (${r.sold_quantity || 0} vendidos)`).join('\n');
+
+    try {
+      const resp = await fetch(CLAUDE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Sos un experto en ventas de Mercado Libre Argentina, especializado en equipos hospitalarios y ortopédicos.
+
+Analizá esta búsqueda de competencia y dá recomendaciones concretas:
+
+Búsqueda: "${query}"
+Rango de precios: $${min.toLocaleString('es-AR')} - $${max.toLocaleString('es-AR')} (promedio $${avg.toLocaleString('es-AR')})
+
+Top publicaciones:
+${summary}
+
+Respondé con:
+1. PRECIO RECOMENDADO: Qué precio ponerle a un producto similar para ser competitivo
+2. OPORTUNIDADES: Qué ventajas se pueden explotar (precio, fotos, descripción, envío)
+3. PALABRAS CLAVE: Las más importantes para el título (máx 5)
+4. ESTRATEGIA: Una recomendación concreta de 2-3 líneas
+
+Sé directo y práctico. Sin introducción, vas al grano.`
+          }]
+        })
+      });
+
+      const data = await resp.json();
+      const text = data.content?.[0]?.text || 'No se pudo generar análisis';
+      document.getElementById('aiAnalysisText').textContent = text;
+    } catch (e) {
+      document.getElementById('aiAnalysisText').textContent = `Error al analizar: ${e.message}`;
+    }
+  }
+
+  // ===== MY LISTINGS =====
+  async function loadMyListings() {
+    if (!state.accessToken) {
+      document.getElementById('listingsContainer').innerHTML = `
+        <div class="empty-state"><div class="icon">🔐</div><p>Conectá tu cuenta en la pestaña Configuración</p></div>`;
+      return;
+    }
+
+    document.getElementById('loadingListings').classList.add('active');
+    document.getElementById('listingsContainer').innerHTML = '';
+
+    try {
+      const searchResp = await fetch(
+        `${ML_API}/users/${state.userId}/items/search?limit=20`,
+        { headers: { Authorization: `Bearer ${state.accessToken}` } }
+      );
+      const searchData = await searchResp.json();
+      const ids = searchData.results || [];
+
+      if (ids.length === 0) {
+        document.getElementById('listingsContainer').innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>No tenés publicaciones activas</p></div>';
+        return;
+      }
+
+      // Fetch detalles en batch
+      const detailsResp = await fetch(
+        `${ML_API}/items?ids=${ids.slice(0,20).join(',')}&attributes=id,title,price,status,thumbnail,available_quantity`,
+        { headers: { Authorization: `Bearer ${state.accessToken}` } }
+      );
+      const detailsData = await detailsResp.json();
+      const items = detailsData.map(d => d.body).filter(Boolean);
+
+      const container = document.getElementById('listingsContainer');
+      container.innerHTML = '';
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'listing-row';
+        row.innerHTML = `
+          <img class="listing-thumb" src="${item.thumbnail?.replace('I.jpg','O.jpg')}" onerror="this.style.display='none'">
+          <div class="listing-info">
+            <div class="listing-title">${item.title}</div>
+            <div class="listing-sub">
+              ID: ${item.id} &nbsp;|&nbsp;
+              Stock: ${item.available_quantity} &nbsp;|&nbsp;
+              <span class="badge ${item.status === 'active' ? 'badge-green' : 'badge-gold'}">${item.status === 'active' ? 'Activa' : item.status}</span>
+            </div>
+          </div>
+          <div class="listing-price">$${item.price?.toLocaleString('es-AR')}</div>
+          <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="window.open('https://www.mercadolibre.com.ar/p/MLA${item.id}','_blank')">Ver</button>
+        `;
+        container.appendChild(row);
+      });
+
+    } catch (e) {
+      document.getElementById('listingsContainer').innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+    } finally {
+      document.getElementById('loadingListings').classList.remove('active');
+    }
+  }
+
+  // ===== PUBLISH FLOW =====
+  function setStep(n) {
+    state.currentStep = n;
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById(`step${i}`);
+      el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+      document.getElementById(`publishStep${i}`).style.display = i === n ? 'block' : 'none';
+    }
+  }
+
+  function goToStep1() { setStep(1); }
+  function goToStep3() { setStep(3); }
+
+  async function goToStep2() {
+    const name = document.getElementById('pubProductName').value.trim();
+    if (!name) { alert('Ingresá el nombre del producto'); return; }
+
+    setStep(2);
+    document.getElementById('loadingAI').classList.add('active');
+    document.getElementById('aiGeneratedContent').style.display = 'none';
+
+    await generateWithAI();
+  }
+
+  async function generateWithAI() {
+    const name = document.getElementById('pubProductName').value.trim();
+    const extra = document.getElementById('pubExtraInfo').value.trim();
+    const salePrice = document.getElementById('pubSalePrice').value;
+    const category = document.getElementById('pubCategory').options[document.getElementById('pubCategory').selectedIndex].text;
+
+    try {
+      const resp = await fetch(CLAUDE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Sos un experto en publicaciones de Mercado Libre Argentina para equipos médicos y ortopédicos.
+
+Generá el contenido optimizado para esta publicación:
+
+Producto: ${name}
+Categoría: ${category}
+Precio objetivo: $${salePrice || 'a definir'}
+Info adicional: ${extra || 'ninguna'}
+
+Respondé ÚNICAMENTE con un JSON válido, sin texto adicional, con esta estructura exacta:
+{
+  "titulo": "título optimizado máx 60 caracteres, con palabras clave al inicio",
+  "descripcion": "descripción completa de 3-5 párrafos con características, beneficios, especificaciones y por qué comprarnos, en tono profesional pero cálido",
+  "precio_sugerido": 25000,
+  "palabras_clave": ["kw1", "kw2", "kw3"]
+}`
+          }]
+        })
+      });
+
+      const data = await resp.json();
+      const text = data.content?.[0]?.text || '{}';
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      state.generatedData = parsed;
+
+      document.getElementById('genTitle').value = parsed.titulo || '';
+      document.getElementById('genDescription').value = parsed.descripcion || '';
+      document.getElementById('genPrice').value = parsed.precio_sugerido || salePrice || '';
+      document.getElementById('finalPrice').value = parsed.precio_sugerido || salePrice || '';
+      document.getElementById('charCount').textContent = `${(parsed.titulo || '').length}/60 caracteres`;
+
+      document.getElementById('aiGeneratedContent').style.display = 'block';
+    } catch (e) {
+      document.getElementById('aiGeneratedContent').innerHTML = `<div class="alert alert-error">❌ Error al generar: ${e.message}</div>`;
+      document.getElementById('aiGeneratedContent').style.display = 'block';
+    } finally {
+      document.getElementById('loadingAI').classList.remove('active');
+    }
+  }
+
+  function regenerateAI() {
+    document.getElementById('loadingAI').classList.add('active');
+    document.getElementById('aiGeneratedContent').style.display = 'none';
+    generateWithAI();
+  }
+
+  // Image handling
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.add('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  }
+
+  function handleFiles(files) {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        state.uploadedImages.push({ data: e.target.result, name: file.name });
+        renderPreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPreviews() {
+    const container = document.getElementById('imagePreviews');
+    container.innerHTML = '';
+    state.uploadedImages.forEach((img, i) => {
+      const item = document.createElement('div');
+      item.className = 'image-preview-item';
+      item.innerHTML = `
+        <img src="${img.data}" alt="preview">
+        <button class="remove-img" onclick="removeImage(${i})">✕</button>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function removeImage(index) {
+    state.uploadedImages.splice(index, 1);
+    renderPreviews();
+  }
+
+  function goToStep4() {
+    setStep(4);
+
+    const title = document.getElementById('genTitle').value;
+    const price = document.getElementById('finalPrice').value;
+    const description = document.getElementById('genDescription').value;
+    const photos = state.uploadedImages.length;
+
+    document.getElementById('reviewContent').innerHTML = `
+      <div class="listing-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+        <div><strong>Título:</strong> ${title}</div>
+        <div><strong>Precio:</strong> <span style="color: var(--accent); font-size: 20px; font-family: 'DM Serif Display'">$${parseInt(price).toLocaleString('es-AR')}</span></div>
+        <div><strong>Fotos:</strong> ${photos} imagen${photos !== 1 ? 'es' : ''}</div>
+        <div><strong>Descripción:</strong><br><span style="font-size: 13px; color: var(--muted);">${description.substring(0, 200)}...</span></div>
+      </div>
+      ${!state.accessToken ? '<div class="alert alert-warning" style="margin-top: 12px;">⚠️ No estás conectado. Conectá tu cuenta en Configuración para publicar directamente en ML.</div>' : ''}
+    `;
+  }
+
+  async function publishItem() {
+    if (!state.accessToken) {
+      document.getElementById('publishResult').innerHTML = `<div class="alert alert-warning">⚠️ Conectá tu cuenta en Configuración para publicar</div>`;
+      return;
+    }
+
+    document.getElementById('loadingPublish').classList.add('active');
+    document.getElementById('publishBtn').disabled = true;
+
+    const title = document.getElementById('genTitle').value;
+    const price = document.getElementById('finalPrice').value;
+    const description = document.getElementById('genDescription').value;
+    const categoryId = document.getElementById('pubCategory').value;
+    const condition = document.getElementById('pubCondition').value;
+    const stock = parseInt(document.getElementById('pubStock').value) || 1;
+
+    try {
+      // 1. Upload images
+      const uploadedPics = [];
+      for (const img of state.uploadedImages.slice(0, 10)) {
+        try {
+          const blob = await fetch(img.data).then(r => r.blob());
+          const form = new FormData();
+          form.append('file', blob, img.name);
+          const picResp = await fetch(`${ML_API}/pictures/items/upload`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${state.accessToken}` },
+            body: form
+          });
+          const picData = await picResp.json();
+          if (picData.id) uploadedPics.push({ id: picData.id });
+        } catch (e) {
+          console.warn('Error uploading image:', e);
+        }
+      }
+
+      // 2. Create item
+      const itemData = {
+        title,
+        category_id: categoryId,
+        price: parseFloat(price),
+        currency_id: 'ARS',
+        available_quantity: stock,
+        condition,
+        listing_type_id: 'gold_special',
+        description: { plain_text: description },
+        ...(uploadedPics.length > 0 ? { pictures: uploadedPics } : {})
+      };
+
+      const itemResp = await fetch(`${ML_API}/items`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${state.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(itemData)
+      });
+
+      const itemResult = await itemResp.json();
+
+      if (itemResult.id) {
+        document.getElementById('publishResult').innerHTML = `
+          <div class="alert alert-success" style="margin-top: 12px;">
+            🎉 ¡Publicación creada exitosamente!<br>
+            ID: <strong>${itemResult.id}</strong><br>
+            <a href="${itemResult.permalink}" target="_blank" style="color: var(--accent);">Ver publicación en ML →</a>
+          </div>`;
+      } else {
+        document.getElementById('publishResult').innerHTML = `<div class="alert alert-error" style="margin-top: 12px;">❌ Error: ${itemResult.message || JSON.stringify(itemResult)}</div>`;
+      }
+    } catch (e) {
+      document.getElementById('publishResult').innerHTML = `<div class="alert alert-error" style="margin-top: 12px;">❌ ${e.message}</div>`;
+    } finally {
+      document.getElementById('loadingPublish').classList.remove('active');
+      document.getElementById('publishBtn').disabled = false;
+    }
+  }
+
+  // Init tab listeners
+  document.getElementById('tabListings').onclick = function(e) {
+    showTab.call(this, 'listings');
+    loadMyListings();
+  };
+</script>
+</body>
+</html>
